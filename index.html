@@ -1,0 +1,342 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1"/>
+  <title>AlumniConnect — College Alumni Network</title>
+  <link rel="stylesheet" href="css/styles.css"/>
+  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
+</head>
+<body>
+
+<!-- ══════════════════════════════════════
+     LOGIN PAGE
+══════════════════════════════════════ -->
+<div id="loginPage" style="display:none">
+  <div class="login-logo">
+    <h1>Alumni<span>Connect</span></h1>
+    <p>🎓 College Alumni Network</p>
+  </div>
+  <div class="login-card">
+    <div class="role-toggle">
+      <button class="role-btn active" data-role="student" onclick="AUTH.switchRole(this)">Student / Alumni</button>
+      <button class="role-btn"        data-role="admin"   onclick="AUTH.switchRole(this)">Coordinator</button>
+    </div>
+    <div class="field">
+      <label>Email or USN</label>
+      <input id="loginEmail" type="text" placeholder="your@email.com or 2TG21CS001"
+             onkeydown="if(event.key==='Enter') AUTH.login()"/>
+    </div>
+    <div class="field">
+      <label>Password</label>
+      <input id="loginPassword" type="password" placeholder="Enter password"
+             onkeydown="if(event.key==='Enter') AUTH.login()"/>
+    </div>
+    <div class="error-msg" id="loginError"></div>
+    <button class="btn-primary" id="loginBtn" onclick="AUTH.login()">Sign In</button>
+    <button class="btn-secondary" onclick="AUTH.showRegister()">New student? Create account →</button>
+    <div style="text-align:center;margin-top:14px">
+      <span style="font-size:13px;color:var(--muted);cursor:pointer" onclick="AUTH.showForgot()">
+        Forgot password? <span style="color:var(--accent2)">Reset via email →</span>
+      </span>
+    </div>
+  </div>
+</div>
+
+
+<!-- ══════════════════════════════════════
+     REGISTER PAGE
+══════════════════════════════════════ -->
+<div id="registerPage" style="display:none">
+  <div class="page-header">
+    <div class="back-btn" onclick="AUTH.showLogin()">←</div>
+    <h2>Create Account</h2>
+  </div>
+  <div style="padding:0 4px">
+    <p style="font-size:13px;color:var(--muted);margin-bottom:22px">
+      Fill in your details to join the alumni directory.
+    </p>
+    <div class="field"><label>Full Name *</label>
+      <input id="regName" placeholder="e.g. Priya Sharma"/>
+    </div>
+    <div class="field">
+      <label>USN / Roll Number *</label>
+      <input id="regUSN" placeholder="e.g. 2TG21CS001"
+             style="text-transform:uppercase" oninput="AUTH.validateUSN(this)"/>
+      <div id="usnHint" style="font-size:12px;margin-top:6px;color:var(--muted)">
+        Must start with <strong style="color:var(--accent2)">2TG</strong>
+        followed by year + branch + roll number (e.g. 2TG21CS001)
+      </div>
+    </div>
+    <div class="field"><label>Branch *</label>
+      <select id="regBranch">
+        <option value="">Select Branch</option>
+        <option>CSE</option><option>ECE</option><option>ME</option>
+        <option>Civil</option><option>EEE</option><option>IT</option>
+        <option>Chemical</option><option>Biotech</option>
+      </select>
+    </div>
+    <div class="field"><label>Year of Passing *</label>
+      <select id="regYear">
+        <option value="">Select Year</option>
+        <option>2025</option><option>2024</option><option>2023</option>
+        <option>2022</option><option>2021</option><option>2020</option>
+        <option>2019</option><option>2018</option>
+      </select>
+    </div>
+    <div class="field"><label>Email Address *</label>
+      <input id="regEmail" type="email" placeholder="your@email.com"/>
+    </div>
+    <div class="field"><label>Password * (min 6 characters)</label>
+      <input id="regPassword" type="password" placeholder="Create a password"/>
+    </div>
+    <div class="field"><label>Confirm Password *</label>
+      <input id="regConfirm" type="password" placeholder="Re-enter password"/>
+    </div>
+    <div class="error-msg" id="registerError"></div>
+    <button class="btn-primary" id="registerBtn" onclick="AUTH.register()">Create Account</button>
+  </div>
+</div>
+
+
+<!-- ══════════════════════════════════════
+     FORGOT PASSWORD PAGE
+══════════════════════════════════════ -->
+<div id="forgotPage" style="display:none">
+  <div class="page-header">
+    <div class="back-btn" onclick="AUTH.showLogin()">←</div>
+    <h2>Reset Password</h2>
+  </div>
+  <div style="padding:0 4px">
+
+    <!-- Step 1: Enter email -->
+    <div id="forgotStep1">
+      <div style="background:rgba(124,106,247,0.08);border:1px solid rgba(124,106,247,0.2);
+                  border-radius:12px;padding:16px;margin-bottom:24px">
+        <p style="font-size:13px;color:var(--accent2);font-weight:600;margin-bottom:6px">📧 How it works</p>
+        <p style="font-size:13px;color:var(--muted);line-height:1.6">
+          Enter your registered email. We will send you a
+          <strong style="color:var(--text)">password reset link</strong>.
+          Click it to set a new password — no OTP to remember!
+        </p>
+      </div>
+      <div class="field">
+        <label>Registered Email Address *</label>
+        <input id="forgotEmail" type="email" placeholder="your@email.com"
+               onkeydown="if(event.key==='Enter') AUTH.sendResetEmail()"/>
+      </div>
+      <div class="error-msg" id="forgotError"></div>
+      <button class="btn-primary" id="forgotBtn" onclick="AUTH.sendResetEmail()">Send Reset Link</button>
+      <button class="btn-secondary" onclick="AUTH.showLogin()">Back to Sign In</button>
+    </div>
+
+    <!-- Step 2: Success -->
+    <div id="forgotStep2" style="display:none;text-align:center;padding:20px 0">
+      <div style="font-size:52px;margin-bottom:20px">📬</div>
+      <h3 style="font-family:'Playfair Display',serif;font-size:22px;margin-bottom:12px">Check your inbox!</h3>
+      <p style="font-size:14px;color:var(--muted);line-height:1.7;margin-bottom:8px">
+        A password reset link has been sent to
+      </p>
+      <p id="forgotSentTo" style="font-size:14px;font-weight:600;color:var(--accent2);margin-bottom:24px"></p>
+      <p style="font-size:13px;color:var(--muted);line-height:1.7;margin-bottom:28px">
+        Click the link in the email to set a new password.
+        Check your spam folder if you don't see it within a minute.
+      </p>
+      <button class="btn-primary" onclick="AUTH.showLogin()">Back to Sign In</button>
+      <button class="btn-secondary" onclick="AUTH.resendReset()">Resend Email</button>
+    </div>
+
+  </div>
+</div>
+
+
+<!-- ══════════════════════════════════════
+     MAIN APP
+══════════════════════════════════════ -->
+<div id="mainApp">
+  <div class="app-shell">
+
+    <!-- TOP BAR -->
+    <div class="top-bar">
+      <div class="logo">Alumni<span>Connect</span></div>
+      <div class="user-chip" onclick="UI.showPage('profile')">
+        <div class="uavatar" id="userInitials">?</div>
+        <span id="userName">User</span>
+        <span class="role-label" id="userRoleLabel">Student</span>
+      </div>
+    </div>
+
+    <div id="toast" class="toast"></div>
+
+    <!-- HOME PAGE -->
+    <div class="page active" id="page-home">
+      <div class="search-bar">
+        <span style="color:var(--muted)">🔍</span>
+        <input id="searchInput" type="text"
+               placeholder="Search by name, branch, company…"
+               oninput="UI.renderList()"/>
+      </div>
+      <div class="tabs">
+        <div class="tab active" onclick="UI.filterByBranch('All',this)">All</div>
+        <div class="tab" onclick="UI.filterByBranch('CSE',this)">CSE</div>
+        <div class="tab" onclick="UI.filterByBranch('ECE',this)">ECE</div>
+        <div class="tab" onclick="UI.filterByBranch('ME',this)">Mech</div>
+        <div class="tab" onclick="UI.filterByBranch('Civil',this)">Civil</div>
+        <div class="tab" onclick="UI.filterByBranch('EEE',this)">EEE</div>
+        <div class="tab" onclick="UI.filterByBranch('IT',this)">IT</div>
+      </div>
+      <div class="year-filter" id="yearFilter"></div>
+      <div id="alumniList">
+        <div class="empty"><div class="icon">⏳</div><p>Loading alumni…</p></div>
+      </div>
+    </div>
+
+    <!-- STATS PAGE -->
+    <div class="page" id="page-stats">
+      <div class="hero-banner">
+        <h2>Alumni <span>Insights</span></h2>
+        <p>Real-time overview of our college alumni network</p>
+      </div>
+      <div class="stats-grid" id="statsGrid"></div>
+      <div class="section-title">Branch Breakdown</div>
+      <div id="branchBreakdown"></div>
+      <div class="section-title">Year-wise Passouts</div>
+      <div id="yearBreakdown"></div>
+    </div>
+
+    <!-- ADD ALUMNI PAGE (Admin only) -->
+    <div class="page" id="page-add">
+      <div class="form-section">
+        <h2>Add Alumni ✦</h2>
+        <p class="subtitle">Manually add a passed-out student to the directory.</p>
+
+        <div class="form-group-title">Academic Details</div>
+        <div class="field"><label>Full Name *</label>
+          <input id="f_name" placeholder="e.g. Rahul Kumar"/>
+        </div>
+        <div class="field"><label>USN / Roll No *</label>
+          <input id="f_usn" placeholder="e.g. 2TG21CS001"
+                 style="text-transform:uppercase" oninput="AUTH.validateUSN(this)"/>
+          <div id="f_usnHint" style="font-size:12px;margin-top:6px;color:var(--muted)">
+            Must start with <strong style="color:var(--accent2)">2TG</strong>
+          </div>
+        </div>
+        <div class="field"><label>Branch *</label>
+          <select id="f_branch">
+            <option value="">Select Branch</option>
+            <option>CSE</option><option>ECE</option><option>ME</option>
+            <option>Civil</option><option>EEE</option><option>IT</option>
+            <option>Chemical</option><option>Biotech</option>
+          </select>
+        </div>
+        <div class="field"><label>Year of Passing *</label>
+          <select id="f_year">
+            <option value="">Select Year</option>
+            <option>2025</option><option>2024</option><option>2023</option>
+            <option>2022</option><option>2021</option><option>2020</option>
+            <option>2019</option><option>2018</option>
+          </select>
+        </div>
+        <div class="field"><label>CGPA</label>
+          <input id="f_cgpa" type="number" step="0.01" min="0" max="10" placeholder="e.g. 8.7"/>
+        </div>
+
+        <div class="form-group-title">Career Details</div>
+        <div class="field"><label>Current Status</label>
+          <select id="f_status">
+            <option value="">Select Status</option>
+            <option>Employed</option><option>Studying</option>
+            <option>Entrepreneur</option><option>Freelancer</option>
+          </select>
+        </div>
+        <div class="field"><label>Company / University</label>
+          <input id="f_company" placeholder="e.g. Infosys / IIT Delhi"/>
+        </div>
+        <div class="field"><label>Job Title / Course</label>
+          <input id="f_role" placeholder="e.g. Software Engineer / M.Tech"/>
+        </div>
+        <div class="field"><label>City</label>
+          <input id="f_city" placeholder="e.g. Bengaluru"/>
+        </div>
+
+        <div class="form-group-title">Contact Details</div>
+        <div class="field"><label>LinkedIn Profile URL</label>
+          <input id="f_linkedin" placeholder="https://linkedin.com/in/…"/>
+        </div>
+        <div class="field"><label>Email</label>
+          <input id="f_email" type="email" placeholder="alumni@email.com"/>
+        </div>
+        <div class="field"><label>Phone</label>
+          <input id="f_phone" placeholder="+91 9999999999"/>
+        </div>
+        <div class="field"><label>Short Bio</label>
+          <textarea id="f_bio" placeholder="A brief note about this alumni…"></textarea>
+        </div>
+        <button class="btn-primary" id="addAlumniBtn" onclick="APP.addAlumni()">
+          + Add to Directory
+        </button>
+      </div>
+    </div>
+
+    <!-- PROFILE PAGE -->
+    <div class="page" id="page-profile">
+      <div class="profile-header" id="profileHeader">
+        <div class="profile-avatar">?</div>
+      </div>
+      <div id="profileBody"></div>
+      <div style="padding:0 0 10px">
+        <button class="btn-danger" onclick="AUTH.logout()">↩ Sign Out</button>
+      </div>
+    </div>
+
+    <!-- BOTTOM NAV -->
+    <div class="bottom-nav">
+      <div class="nav-item active" id="nav-home" onclick="UI.showPage('home')">
+        <div class="nav-icon">🏠</div><span>Directory</span>
+      </div>
+      <div class="nav-item" id="nav-stats" onclick="UI.showPage('stats')">
+        <div class="nav-icon">📊</div><span>Stats</span>
+      </div>
+      <div class="nav-item" id="nav-add" onclick="UI.showPage('add')" style="display:none">
+        <div class="nav-icon">➕</div><span>Add</span>
+      </div>
+      <div class="nav-item" id="nav-profile" onclick="UI.showPage('profile')">
+        <div class="nav-icon">👤</div><span>Profile</span>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- DETAIL MODAL -->
+<div class="modal-overlay" id="modalOverlay" onclick="UI.closeModal(event)">
+  <div class="modal">
+    <div class="modal-handle"></div>
+    <div id="modalBody"></div>
+  </div>
+</div>
+
+<!-- SCRIPTS -->
+<script src="js/firebase-config.js"></script>
+<script src="js/app.js"></script>
+<script src="js/auth.js"></script>
+<script>
+  document.addEventListener('DOMContentLoaded', () => {
+    db.collection('alumni')
+      .orderBy('createdAt', 'desc')
+      .onSnapshot(snap => {
+        const docs = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+        window._fullAlumniCache = docs;
+        window._alumniAll = docs;
+        if (document.getElementById('mainApp').classList.contains('active')) {
+          UI.renderYearFilter();
+          UI.renderList();
+          UI.renderStats();
+        }
+      }, err => console.warn('Listener:', err.code));
+  });
+</script>
+</body>
+</html>

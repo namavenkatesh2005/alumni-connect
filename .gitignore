@@ -1,0 +1,14 @@
+# Firebase
+.firebaserc
+firebase.json
+.firebase/
+
+# VS Code
+.vscode/
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
